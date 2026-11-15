@@ -578,7 +578,7 @@ async function handleSubmit(event) {
     await run(async()=>{
       const name=get('name'),email=get('email'),password=get('password');
       if(name.length<2)throw new Error('Escribe tu nombre');
-      const response=await db.auth.signUp({email,password,options:{data:{display_name:name}}});
+      const response=await db.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{display_name:name}}});
       check(response);
       state.modal=null;
       toast(response.data.session?'Cuenta creada. Solicita tu acceso.':'Cuenta creada. Comprueba tu correo para confirmar la cuenta.');
