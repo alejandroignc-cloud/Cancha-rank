@@ -374,7 +374,9 @@ function renderModal() {
     wide=true;
     body='<div class="modal-head"><div><span class="eyebrow">GESTIÓN DE FECHA</span><h2>'+e(r.name)+'</h2></div><button class="icon-btn" data-action="close-modal">'+ico('x')+'</button></div>'+
       '<p class="small">Selecciona participantes y registra goles o asistencias reales. '+(locked?'Esta fecha ya tiene votos; no se pueden cambiar sus participantes.':'Puedes convocar o desconvocar jugadores antes de recibir votos.')+'</p>'+
-      '<form data-form="manage-round" data-id="'+e(r.id)+'"><div class="participant-list">'+
+      '<form data-form="manage-round" data-id="'+e(r.id)+'">'+
+      '<div class="form-grid">'+field('Nombre de la jornada','<input name="round_name" required maxlength="60" value="'+e(r.name)+'">')+
+      field('Fecha del partido','<input name="played_on" type="date" required value="'+e(r.played_on)+'">')+'</div><div class="participant-list">'+
       (state.players.length?state.players.map(p=>{
         const perf=state.performances.find(x=>x.round_id===r.id&&x.player_id===p.id);
         return '<div class="participant-row"><input aria-label="Convocar '+e(p.name)+'" type="checkbox" name="p_'+e(p.id)+'" '+(included.has(p.id)?'checked':'')+' '+(locked?'disabled':'')+'>'+
@@ -631,12 +633,15 @@ async function handleSubmit(event) {
   }
   if(type==='manage-round'){
     const id=form.dataset.id, m=state.modal;
+    const editedRound={name:get('round_name'),played_on:get('played_on')};
+    if(!editedRound.name||!editedRound.played_on){toast('Completa el nombre y la fecha',true);return;}
     const selected=state.players.filter(p=>fd.has('p_'+p.id)).map(p=>p.id);
     const existing=participants(id).map(p=>p.id);
     if(m?.votes>0){selected.splice(0,selected.length,...existing);}
     const add=selected.filter(pid=>!existing.includes(pid));
     const remove=existing.filter(pid=>!selected.includes(pid));
     await run(async()=>{
+      check(await db.from('rounds').update(editedRound).eq('id',id));
       if(remove.length)check(await db.from('round_players').delete().eq('round_id',id).in('player_id',remove));
       if(add.length)check(await db.from('round_players').insert(add.map(pid=>({round_id:id,player_id:pid}))));
       const performances=selected.map(pid=>({
