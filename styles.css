@@ -337,3 +337,13 @@ tbody tr:hover{background:rgba(255,255,255,.018)}
 @media(prefers-reduced-motion:reduce){
  *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+
+/* Gráfico individual de evolución: puro CSS, sin librerías externas */
+.history-chart{height:190px;display:flex;align-items:flex-end;gap:10px;padding:18px 10px 15px;background:linear-gradient(180deg,#162b2e,#101d25);border:1px solid var(--line);border-radius:14px;margin:15px 0 21px}
+.history-col{flex:1;min-width:0;max-width:65px;height:100%;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end}
+.history-col>b{font:800 11px var(--font-display);color:var(--lime);white-space:nowrap}
+.history-col>small{font-size:9px;color:var(--faint);white-space:nowrap}
+.history-track{height:100%;min-height:20px;width:min(27px,90%);position:relative;display:flex;align-items:flex-end}
+.history-fill{width:100%;background:linear-gradient(180deg,#b9f56b,#3da78e);border-radius:7px 7px 3px 3px;min-height:4px;box-shadow:0 0 20px rgba(185,245,107,.08)}
+.history-list{max-height:270px;overflow:auto;padding-right:3px}
