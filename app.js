@@ -315,6 +315,20 @@ function memberLine(m) {
     (!m.approved||m.blocked?actionBtn('approve-member','Aprobar','','data-id="'+e(m.user_id)+'"'):'')+
     (!me&&m.approved&&!m.blocked?actionBtn('block-member','Bloquear','danger','data-id="'+e(m.user_id)+'"'):'')+'</div></div>';
 }
+function renderHistory(history) {
+  if(history===null) return '<div class="loading-state" style="min-height:120px"><div class="loading-spinner"></div><p>Cargando historial...</p></div>';
+  if(!history.length) return empt('Sin historial todavía','Este jugador aún no ha sido convocado a ninguna jornada.','calendar');
+  const chart=[...history].reverse().slice(-10);
+  const max=Math.max(1,...chart.map(x=>Number(x.points)||0));
+  return '<div class="history-chart" aria-label="Evolución de puntos por jornada">'+chart.map(h=>{
+    const pct=Math.max(5,Math.round((Number(h.points)||0)/max*100));
+    return '<div class="history-col" title="'+e(h.round_name)+': '+num(h.points)+' puntos">'+
+      '<b>'+num(h.points)+'</b><div class="history-track"><div class="history-fill" style="height:'+pct+'%"></div></div>'+
+      '<small>'+e(String(h.played_on).slice(5))+'</small></div>';
+  }).join('')+'</div><div class="history-list">'+history.map(h=>
+    '<div class="list-row"><div><strong>'+e(h.round_name)+'</strong><p class="small" style="margin:2px 0 0">'+dated(h.played_on)+' · '+fmt(h.average_score)+' de media · '+num(h.mvp_votes)+' MVP</p></div>'+
+    '<div style="text-align:right"><strong class="lime">'+num(h.points)+' pts</strong><p class="small" style="margin:2px 0 0">'+num(h.goals)+' G / '+num(h.assists)+' A</p></div></div>').join('')+'</div>';
+}
 function renderModal() {
   const m=state.modal;
   if (!m) return '';
@@ -340,7 +354,7 @@ function renderModal() {
       '<div class="grid-two">'+metric('Puntos',s.points,'trophy','Histórico')+metric('Promedio',fmt(s.average_score),'trend','Notas recibidas')+
       metric('MVP',s.mvp_votes,'crown','Votos a mejor jugador')+metric('Partidos',s.rounds_played,'calendar','Jornadas jugadas')+
       metric('Goles',s.goals,'goal','Registrados')+metric('Asistencias',s.assists,'activity','Registradas')+'</div>'+
-      '<p class="help" style="margin-top:18px">Las estadísticas se actualizan con las jornadas y votaciones reales.</p>';
+      '<div class="divider"></div><div class="panel-title"><div><h3>Evolución por jornada</h3><p>Historial completo de puntos, goles, asistencias y MVP.</p></div>'+ico('trend')+'</div>'+renderHistory(m.history);
     wide=true;
   } else if(m.type==='edit-player') {
     const p=player(m.id);if(!p)return '';
@@ -504,7 +518,15 @@ async function handleClick(event) {
     state.scores[id]=Number(btn.dataset.score);render();return;
   }
   if(action==='mvp'){state.mvp=id;render();return;}
-  if(action==='player-details'){state.modal={type:'player',id};render();return;}
+  if(action==='player-details'){
+    state.modal={type:'player',id,history:null};render();
+    await run(async()=>{
+      const history=check(await db.rpc('get_player_history',{p_player:id}))||[];
+      if(state.modal?.type==='player' && state.modal.id===id){
+        state.modal.history=history;render();
+      }
+    });return;
+  }
   if(!state.admin)return;
   if(action==='admin-tab'){state.adminTab=btn.dataset.tab;render();return;}
   if(action==='edit-player'){state.modal={type:'edit-player',id};render();return;}
